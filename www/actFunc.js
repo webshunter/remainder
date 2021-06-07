@@ -43,3 +43,8 @@ export function updateFunc(id) {
 
     })
 }
+
+export async function countId() {
+    var data = await axios.get(globalThis.hostApi + 'count');
+    return data.data;
+}

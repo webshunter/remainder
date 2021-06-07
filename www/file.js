@@ -14,10 +14,21 @@ function delay(callback, ms) {
 
 function el(el) {
     var obj = {}
-    obj.el = document.createElement(el);
+    if (typeof el == 'object') {
+        obj.el = el;
+    } else {
+        obj.el = document.createElement(el);
+    }
     obj.ch = [];
     obj.id = function (a) {
         this.el.id = a;
+        globalThis[a] = {
+            parent: this.el,
+            el: globalThis.el(this.el),
+            child: function (a) {
+                return this.parent.appendChild(a.get())
+            }
+        }
         return this;
     }
     obj.text = function (a) {
@@ -54,6 +65,22 @@ function el(el) {
     }
     obj.change = function (func) {
         this.el.addEventListener('change', func, false);
+        return this;
+    }
+    obj.touchend = function (func) {
+        this.el.addEventListener('touchend', func, false);
+        return this;
+    }
+    obj.touchstart = function (func) {
+        this.el.addEventListener('touchstart', func, false);
+        return this;
+    }
+    obj.focus = function (func) {
+        this.el.addEventListener('focus', func, false);
+        return this;
+    }
+    obj.focusout = function (func) {
+        this.el.addEventListener('focusout', func, false);
         return this;
     }
     obj.keydown = function (func) {
@@ -325,8 +352,34 @@ function el(el) {
         this.ch.push(d.get());
         return this;
     }
+    obj.getChild = function (pop) {
+        return {
+            parent: this.get().children[pop],
+            el: globalThis.el(this.get().children[pop]),
+            child: function (a) {
+                return this.parent.appendChild(a.get())
+            }
+        }
+    }
+    obj.row = function (a) {
+        var d = div()
+            .class('row')
+
+        a.forEach(function (elm) {
+            d.child(
+                div().class(elm['class']).child(elm['content'])
+            )
+        }, d);
+        this.ch.push(d.get());
+        return this;
+    }
     return obj;
 }
+
+const getElementById = function(a){
+    return globalThis[a];
+}
+
 
 function tanggal(a) {
     var newDate = new Date();
@@ -410,6 +463,8 @@ function tanggal(a) {
     var firstDay = new Date(newDate.getFullYear(), newDate.getMonth(), 1);
     var lastDay = new Date(newDate.getFullYear(), newDate.getMonth() + 1, 0)
     var returnData = {
+        oneDayMilisecond: 86400000,
+        milisecond: newDate.getTime(),
         normal: buatO(newDate).full,
         cek1: buatC(newDate),
         sekarang: buat(newDate),
@@ -642,4 +697,50 @@ function perulangan(a, b, c) {
     } else {
         // do nothing
     }
+}
+
+function loads(arr = [], success, errorf) {
+    function loadScript(url) {
+        return new Promise(function (resolve, reject) {
+            let script = document.createElement("script");
+            script.src = url;
+            script.async = false;
+            script.onload = function () {
+                resolve(url);
+            };
+            script.onerror = function () {
+                reject(url);
+            };
+            document.body.appendChild(script);
+        });
+    }
+
+    let scripts = arr;
+
+    // save all Promises as array
+    let promises = [];
+    scripts.forEach(function (url) {
+        promises.push(loadScript(url));
+
+    });
+
+    Promise.all(promises)
+        .then(function () {
+            success();
+        })
+        .catch(function (script) {
+            errorf(script)
+        });
+}
+
+function childes(el = null , err = []){
+    var e = el;
+    for (let x = 0; x < err.length; x++) {
+        if((err.length - 1)== x){
+            e = e.getChild(err[x])        
+        }else{
+            e = e.getChild(err[x]).el;       
+        }
+    }
+    return e;
 }

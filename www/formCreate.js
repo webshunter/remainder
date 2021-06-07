@@ -1,8 +1,23 @@
-import { formatRupiah } from './formatRupiah.js';
-import { menu } from './menu.js';
-import { history } from './history.js';
+async function formcreate(idedt = null) {
 
-export function formcreate() {
+    var setEdit = null;
+    // if
+    if(idedt != null){
+
+        // proses pengambilan data
+        var params = new URLSearchParams();
+        params.append('query', `SELECT * FROM api_remainder WHERE id = '${idedt}' `);
+        var setEdit = await axios.post(globalThis.hostApi + 'json', params);
+        setEdit = setEdit.data[0];
+
+    }
+
+
+    var wp = await countId();
+    var str = "" + (wp.total + 1)
+    var pad = "0000"
+    var ans = pad.substring(0, pad.length - str.length) + str
+
 
     var cx = div().id('app').class('app')
         .css('background-color', '#001C52')
@@ -10,7 +25,7 @@ export function formcreate() {
         .height('100vh')
 
     cx.child(
-        h3().css('text-align', 'left').html('Account <br>App.').color("#ffffff").padding('16px 24px').margin(0)
+        h3().css('text-align', 'left').html('').color("#ffffff").padding('16px 24px').margin(0)
     );
     cx.child(
         el('span').text('Menu').color('#7E99CD').size('20px').margin('0 15px').click(function () {
@@ -18,8 +33,29 @@ export function formcreate() {
         })
     );
     cx.child(
-        el('span').text('Login Tambah').color('#FFFFFF').size('20px').margin('0 15px').click(function () {
-            formcreate();
+        el('span').text('Tambah').color('#FFFFFF').size('20px').margin('0 15px').click(async function () {
+            var userlog = JSON.parse(localStorage.getItem('datalogin'))[0];
+    
+            var params = new URLSearchParams();
+            params.append('query', `SELECT * FROM login WHERE id = '${userlog.id}' `);
+            var ssk = await axios.post(globalThis.hostApi + 'json', params);
+
+            if(ssk.data[0].sebagai != 'admin'){
+                console.log('jalan');
+
+                function alertDismissed() {
+                }
+
+                navigator.notification.alert(
+                    'Maaf anda buka seorang admin!',  // message
+                    alertDismissed,         // callback
+                    'info',            // title
+                    ''                  // buttonName
+                );
+
+            } else {
+                formcreate();
+            }
         })
     );
     cx.child(
@@ -94,12 +130,20 @@ export function formcreate() {
                 return '"' + e[el] + '"';
             }).join(",")
 
+            var vall2 = Obj.map(function (el) {
+                return ' '+el+' = "' + e[el] + '"';
+            }).join(",")
+
 
             // sql insert
 
+            var sqlI = null;
 
-            var sqlI = ` INSERT INTO api_remainder (${Obj.join(",")}) VALUES (${vall}) `;
-
+            if(setEdit != null){
+                sqlI = `UPDATE api_remainder SET ${vall2} WHERE id = '${setEdit.id}' `;
+            }else{
+                sqlI = ` INSERT INTO api_remainder (${Obj.join(",")}) VALUES (${vall}) `;
+            }
 
             var params = new URLSearchParams();
             params.append('query', sqlI);
@@ -124,8 +168,29 @@ export function formcreate() {
                 div()
                     .css('margin-top', '25px')
                     .child(
-                        btn().type('button').text('Tambah').css(buttonL).click(function () {
-                            formcreate();
+                        btn().type('button').text('Tambah').css(buttonL).click(async function () {
+                            var userlog = JSON.parse(localStorage.getItem('datalogin'))[0];
+    
+            var params = new URLSearchParams();
+            params.append('query', `SELECT * FROM login WHERE id = '${userlog.id}' `);
+            var ssk = await axios.post(globalThis.hostApi + 'json', params);
+
+            if(ssk.data[0].sebagai != 'admin'){
+                console.log('jalan');
+
+                function alertDismissed() {
+                }
+
+                navigator.notification.alert(
+                    'Maaf anda buka seorang admin!',  // message
+                    alertDismissed,         // callback
+                    'info',            // title
+                    ''                  // buttonName
+                );
+
+            } else {
+                formcreate();
+            }
                         })
                     )
                     .child(
@@ -141,6 +206,7 @@ export function formcreate() {
                             .type('text')
                             .hold('Nama Fintech')
                             .name('nama_fintech')
+                            .id('nama_fintech')
                             .required()
                             .css({
                                 float: 'left',
@@ -158,6 +224,7 @@ export function formcreate() {
                             .type('text')
                             .hold('loan Id')
                             .name('loan_id')
+                            .id('loan_id')
                             .required()
                             .css({
                                 width: 'calc(30% - 30px)',
@@ -168,15 +235,17 @@ export function formcreate() {
                                 border: 'none',
                                 backgroundColor: '#E3E3E3',
                             })
+                            .val(ans)
                     )
             )
             .child(
                 div()
                     .child(
                         el('input')
-                            .type('date')
+                            .type('text')
                             .hold('Tanggal Pencairan')
                             .name('tgl_cair')
+                            .id('tgl_cair')
                             .required()
                             .css({
                                 width: 'calc(50% - 30px)',
@@ -186,6 +255,15 @@ export function formcreate() {
                                 outline: 'none',
                                 border: 'none',
                                 backgroundColor: '#E3E3E3',
+                            })
+                            .focus(function () {
+                                this.type = 'date';
+                            })
+                            .focusout(function () {
+                                this.type = 'text';
+                            })
+                            .touchend(function () {
+                                this.type = 'date';
                             })
                     )
                     .child(
@@ -193,6 +271,7 @@ export function formcreate() {
                             .type('text')
                             .hold('Nominal')
                             .name('nominal')
+                            .id('nominal')
                             .required()
                             .css({
                                 width: 'calc(50% - 30px)',
@@ -204,7 +283,7 @@ export function formcreate() {
                                 backgroundColor: '#E3E3E3',
                             })
                             .keyup(function () {
-                                this.value = formatRupiah(this.value, '');
+                                this.value = formatRupiah(this.value, 'Rp. ');
                             })
                     )
             )
@@ -212,10 +291,10 @@ export function formcreate() {
                 div()
                     .child(
                         el('input')
-                            .type('date')
+                            .type('text')
                             .hold('Tanggal Jatuh Tempo')
                             .name('tgl_tempo')
-                            .required()
+                            .id('tgl_tempo')
                             .css({
                                 width: 'calc(50% - 30px)',
                                 margin: '5px 5px',
@@ -224,6 +303,15 @@ export function formcreate() {
                                 outline: 'none',
                                 border: 'none',
                                 backgroundColor: '#E3E3E3',
+                            })
+                            .focus(function () {
+                                this.type = 'date';
+                            })
+                            .focusout(function () {
+                                this.type = 'text';
+                            })
+                            .touchend(function () {
+                                this.type = 'date';
                             })
                     )
                     .child(
@@ -231,6 +319,7 @@ export function formcreate() {
                             .type('text')
                             .hold('Pencairan')
                             .name('pencairan')
+                            .id('pencairan')
                             .required()
                             .css({
                                 width: 'calc(50% - 30px)',
@@ -242,7 +331,7 @@ export function formcreate() {
                                 backgroundColor: '#E3E3E3',
                             })
                             .keyup(function () {
-                                this.value = formatRupiah(this.value, '');
+                                this.value = formatRupiah(this.value, 'Rp. ');
                             })
                     )
             )
@@ -250,9 +339,26 @@ export function formcreate() {
                 div()
                     .child(
                         el('input')
+                            .type('number')
+                            .hold('TOP')
+                            .name('top')
+                            .id('top')
+                            .css({
+                                width: 'calc(100% - 30px)',
+                                margin: '5px 5px',
+                                padding: '12px 10px',
+                                borderRadius: '4px',
+                                outline: 'none',
+                                border: 'none',
+                                backgroundColor: '#E3E3E3',
+                            })
+                    )
+                    .child(
+                        el('input')
                             .type('text')
                             .hold('Bunga')
                             .name('bunga')
+                            .id('bunga')
                             .required()
                             .css({
                                 width: 'calc(100% - 30px)',
@@ -264,7 +370,7 @@ export function formcreate() {
                                 backgroundColor: '#E3E3E3',
                             })
                             .keyup(function () {
-                                this.value = formatRupiah(this.value, '');
+                                this.value = formatRupiah(this.value, 'Rp. ');
                             })
                     )
                     .child(
@@ -272,6 +378,7 @@ export function formcreate() {
                             .type('text')
                             .hold('Total yang harus dibayar')
                             .name('total_bayar')
+                            .id('total_bayar')
                             .required()
                             .css({
                                 width: 'calc(100% - 30px)',
@@ -283,7 +390,7 @@ export function formcreate() {
                                 backgroundColor: '#E3E3E3',
                             })
                             .keyup(function () {
-                                this.value = formatRupiah(this.value, '');
+                                this.value = formatRupiah(this.value, 'Rp. ');
                             })
                     )
             )
@@ -294,6 +401,7 @@ export function formcreate() {
                             .width('100%')
                             .type('text')
                             .hold('Keterangan')
+                            .id('keterangan')
                             .name('keterangan')
                             .required()
                             .css({
@@ -330,6 +438,44 @@ export function formcreate() {
             )
     );
 
+    if(setEdit != null){
+        getElementById('nama_fintech').parent.value = setEdit.nama_fintech;
+        getElementById('loan_id').parent.value = setEdit.loan_id;
+        getElementById('tgl_cair').parent.value = setEdit.tgl_cair;
+        getElementById('nominal').parent.value = setEdit.nominal;
+        getElementById('tgl_tempo').parent.value = setEdit.tgl_tempo;
+        getElementById('pencairan').parent.value = setEdit.pencairan;
+        getElementById('top').parent.value = setEdit.top;
+        getElementById('bunga').parent.value = setEdit.bunga;
+        getElementById('total_bayar').parent.value = setEdit.total_bayar;
+        getElementById('keterangan').parent.value = setEdit.keterangan;
+    }
+
     domp('app', cx)
 
 }
+
+globalThis.editData = async function(id){
+    var userlog = JSON.parse(localStorage.getItem('datalogin'))[0];
+    
+            var params = new URLSearchParams();
+            params.append('query', `SELECT * FROM login WHERE id = '${userlog.id}' `);
+            var ssk = await axios.post(globalThis.hostApi + 'json', params);
+
+            if(ssk.data[0].sebagai != 'admin'){
+                console.log('jalan');
+
+                function alertDismissed() {
+                }
+
+                navigator.notification.alert(
+                    'Maaf anda buka seorang admin!',  // message
+                    alertDismissed,         // callback
+                    'info',            // title
+                    ''                  // buttonName
+                );
+
+            } else {
+                formcreate(id);
+            }
+};
